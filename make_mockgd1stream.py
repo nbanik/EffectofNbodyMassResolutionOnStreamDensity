@@ -39,7 +39,7 @@ def get_options():
                       type='float',
                       help="velocity dispersion in km/s")
 
-     parser.add_option("--isob",dest='isob',default=1.1,
+    parser.add_option("--isob",dest='isob',default=0.5,
                       type='float',
                       help="isochrone parameter")
                          
@@ -142,17 +142,24 @@ m_over_r2 = np.array([0.10738246142864227, 0.09845212732943764, 0.09336166768108
                       0.017891681778732335, 0.017654316711425783]) #10^10Msun/kpc^2
 
 
+ro = 8.
+vo= 220.
+
 interp_m_over_r2 = UnivariateSpline(rgrid,m_over_r2) #10^10Msun/kpc^2
 
-def rad_acc(r):
+def rad_acc(r): #input r is in galpy units
+    r*=ro #r is now in physical units
     acc = 1e10*interp_m_over_r2(r)*(conversion._G*0.001) #(km/s)^2/kpc
-    acc*=-1.*(8./(220.*220.)) #in galpy units
+    acc*=(0.001*conversion._kmsInPcMyr) #km/s/Myr
+    acc*=(-1./conversion.force_in_kmsMyr(vo,ro))#in galpy units
     return (acc)
 
-Phi0 = (conversion._G*0.001)*(1e10)*interp_m_over_r2(rgrid[0])*rgrid[0] #(km/s)^2
-Phi0/=(220.*220.)
+Phi0 = rad_acc(rgrid[0]/ro)*(rgrid[0]/ro) # in galpy units
 
-ip_halo= potential.interpSphericalPotential(rforce=rad_acc,rgrid=rgrid/8.,Phi0=Phi0)
+
+ip_halo= potential.interpSphericalPotential(rforce=rad_acc,rgrid=rgrid/ro,Phi0=Phi0)
+ip_halo.turn_physical_off()
+
 
 disk_pot = MiyamotoNagaiPotential(amp=5.78*10**10*u.Msun,a=3.5*u.kpc,b=0.5*u.kpc)
 disk_pot.turn_physical_off()
