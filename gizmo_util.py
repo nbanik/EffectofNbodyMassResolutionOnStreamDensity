@@ -3,6 +3,7 @@ import pickle
 import numpy as np
 from scipy.stats import gaussian_kde
 from galpy.util import _rotate_to_arbitrary_vector
+from scipy.interpolate import interpn
 
 
 '''
